@@ -50,3 +50,46 @@ python scripts/compare_models.py --run-dir runs/<run_id>
 - `scripts/`: CLI entrypoints
 - `tests/`: unit tests
 - `runs/`: timestamped artifacts
+
+## Latest experiment
+
+Latest paper-alignment run:
+
+- run id: `repro_20260506_040324`
+- config: `configs/paper_like_btcusd_2012_2021.yaml`
+- paper table similarity:
+  - Table 1: `53.64%`
+  - Table 2: `24.85%`
+  - Table 3: `59.39%`
+  - Combined Table 1-3 score: `45.96%`
+
+Key outputs from this run:
+
+- Table 1 summary:
+  - close mean `7880.96`
+  - log return std `0.00347`
+  - volatility mean `0.00200`
+  - volume mean `29.08`
+- Table 2 centroids:
+  - bullish `return 0.00288`, `volatility 0.00418`
+  - sideways `return -0.00003`, `volatility 0.00131`
+  - bearish `return -0.00628`, `volatility 0.00419`
+- Table 3 transition matrix:
+  - bullish -> bullish `0.6123`
+  - bearish -> bearish `0.8041`
+  - sideways -> sideways `0.8804`
+
+Plots from the latest run:
+
+### KMeans-only
+
+![KMeans-only regime plot](docs/plots/latest_kmeans_only_regime_plot.png)
+
+### Hybrid HMM + K-Means
+
+![Hybrid HMM regime plot](docs/plots/latest_hybrid_hmm_regime_plot.png)
+
+Notes:
+
+- This run uses the paper-like `BTCUSD` approximation dataset, not the exact `btcusd_1-min_data.csv` referenced by the article.
+- The latest tuning pass uses separate feature tail clipping for `log_return` and `rolling_volatility` to improve paper-table alignment without changing the core K-Means -> HMM workflow.
