@@ -1,0 +1,43 @@
+dataset:
+  source_path: ${BTC_PAPER_LIKE_SOURCE_PATH}
+  source_format: csv
+  timestamp_column: timestamp
+  timestamp_unit: s
+  open_column: open
+  high_column: high
+  low_column: low
+  close_column: close
+  volume_column: volume
+  symbol: BTCUSD
+  symbol_alias: BTC/USD
+  market_type: bitstamp_btcusd_derived_from_kaggle
+  source_name: ff137_bitstamp_bulk_derived_from_mczielinski_kaggle
+  resample_rule: 5min
+  start_utc: 2012-01-01T00:00:00Z
+  end_utc: 2021-12-31T23:59:00Z
+  short_gap_fill_limit_bars: 3
+  gap_fill_method: forward_fill
+  alternate_gap_fill_method: time_interpolation
+  outlier_zscore_threshold: 3.0
+  outlier_reference: log_return
+  paper_dataset_match: false
+
+experiment:
+  output_root: ${BTC_REGIME_OUTPUT_ROOT}
+  volatility_window: 10
+  volatility_window_candidates: [10, 20, 30]
+  feature_clip_quantile:
+  log_return_clip_quantile: 0.9999
+  volatility_clip_quantile: 0.95
+  elbow_train_stride: 10
+  kmeans_train_stride: 1
+  hmm_train_stride: 10
+  k_values: [2, 3, 4, 5, 6]
+  main_k: 3
+  n_states: 3
+  covariance_type: diag
+  max_iterations: 20
+  random_seed: 42
+  plot_start_utc: 2012-01-01T00:00:00Z
+  plot_end_utc: 2012-03-31T23:55:00Z
+  plot_max_points: 12000

@@ -1,0 +1,40 @@
+dataset:
+  source_path: ${BTC_PAPER_SOURCE_PATH}
+  source_format: csv
+  timestamp_column: Timestamp
+  timestamp_unit: s
+  open_column: Open
+  high_column: High
+  low_column: Low
+  close_column: Close
+  volume_column: Volume
+  symbol: BTCUSD
+  symbol_alias: BTC/USD
+  market_type: paper_native_csv
+  source_name: btcusd_1-min_data
+  resample_rule: 5min
+  start_utc: 2012-01-01T00:00:00Z
+  end_utc: 2021-12-31T23:59:00Z
+  short_gap_fill_limit_bars: 3
+  gap_fill_method: forward_fill
+  alternate_gap_fill_method: time_interpolation
+  outlier_zscore_threshold: 4.0
+  outlier_reference: log_return
+  paper_dataset_match: true
+
+experiment:
+  output_root: ${BTC_REGIME_OUTPUT_ROOT}
+  volatility_window: 20
+  volatility_window_candidates: [10, 20, 30]
+  elbow_train_stride: 10
+  kmeans_train_stride: 1
+  hmm_train_stride: 20
+  k_values: [2, 3, 4, 5, 6]
+  main_k: 3
+  n_states: 3
+  covariance_type: diag
+  max_iterations: 300
+  random_seed: 42
+  plot_start_utc: 2012-01-01T00:00:00Z
+  plot_end_utc: 2012-03-31T23:55:00Z
+  plot_max_points: 12000
