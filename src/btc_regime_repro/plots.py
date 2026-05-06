@@ -7,14 +7,16 @@ matplotlib.use("Agg")
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import pandas as pd
 
 
 REGIME_COLORS = {
-    "bullish": "#6baed6",
-    "bearish": "#f2b134",
-    "sideways": "#74c476",
+    "bullish": "#9ed89e",
+    "bearish": "#f3a6a6",
+    "sideways": "#e5e7eb",
 }
+PRICE_LINE_COLOR = "#1f2937"
 
 
 def _utc_timestamp(value: object) -> pd.Timestamp:
@@ -24,11 +26,11 @@ def _utc_timestamp(value: object) -> pd.Timestamp:
     return ts.tz_convert("UTC")
 
 
-def _line_legend_items() -> list[Line2D]:
+def _background_legend_items() -> list[Patch]:
     return [
-        Line2D([0], [0], color=REGIME_COLORS["bullish"], lw=1.8, label="Bullish"),
-        Line2D([0], [0], color=REGIME_COLORS["bearish"], lw=1.8, label="Bearish"),
-        Line2D([0], [0], color=REGIME_COLORS["sideways"], lw=1.8, label="Sideways"),
+        Patch(facecolor=REGIME_COLORS["bullish"], edgecolor="none", alpha=0.35, label="Bullish"),
+        Patch(facecolor=REGIME_COLORS["bearish"], edgecolor="none", alpha=0.35, label="Bearish"),
+        Patch(facecolor=REGIME_COLORS["sideways"], edgecolor="none", alpha=0.6, label="Sideways"),
     ]
 
 
@@ -42,19 +44,30 @@ def _downsample_for_plot(frame: pd.DataFrame, max_points: int = 50000) -> pd.Dat
     return sampled[~sampled.index.duplicated(keep="last")]
 
 
-def _plot_regime_segments(ax: plt.Axes, frame: pd.DataFrame, max_points: int) -> None:
-    frame = _downsample_for_plot(frame, max_points=max_points)
-    segments = frame.loc[:, ["close", "regime"]].copy()
-    segments["next_close"] = segments["close"].shift(-1)
-    segments["next_time"] = segments.index.to_series().shift(-1)
-    segments = segments.dropna(subset=["next_close", "next_time"])
-    for ts, row in segments.iterrows():
-        ax.plot(
-            [ts, row["next_time"]],
-            [float(row["close"]), float(row["next_close"])],
-            color=REGIME_COLORS.get(str(row["regime"]).lower(), "#6b7280"),
-            lw=0.9,
-            alpha=0.95,
+def _plot_price_line(ax: plt.Axes, frame: pd.DataFrame, max_points: int) -> None:
+    sampled = _downsample_for_plot(frame.loc[:, ["close"]], max_points=max_points)
+    ax.plot(sampled.index, sampled["close"], color=PRICE_LINE_COLOR, lw=1.0, alpha=0.95, zorder=3)
+
+
+def _plot_regime_background(ax: plt.Axes, frame: pd.DataFrame) -> None:
+    if frame.empty:
+        return
+    spans = frame.loc[:, ["regime"]].copy()
+    spans["group"] = spans["regime"].astype(str).ne(spans["regime"].astype(str).shift()).cumsum()
+    default_delta = frame.index.to_series().diff().median()
+    if pd.isna(default_delta) or default_delta <= pd.Timedelta(0):
+        default_delta = pd.Timedelta(minutes=5)
+    for _, group in spans.groupby("group"):
+        start = group.index[0]
+        end = group.index[-1] + default_delta
+        regime = str(group["regime"].iloc[0]).lower()
+        ax.axvspan(
+            start,
+            end,
+            facecolor=REGIME_COLORS.get(regime, "#e5e7eb"),
+            alpha=0.35 if regime != "sideways" else 0.6,
+            lw=0,
+            zorder=1,
         )
 
 
@@ -75,12 +88,13 @@ def plot_regimes(
         joined = joined.loc[_utc_timestamp(plot_start_utc) :]
     if plot_end_utc is not None:
         joined = joined.loc[: _utc_timestamp(plot_end_utc)]
-    _plot_regime_segments(ax, joined, max_points=max_points)
+    _plot_regime_background(ax, joined)
+    _plot_price_line(ax, joined, max_points=max_points)
     ax.set_title(title, fontsize=11)
     ax.set_ylabel("Price (USD)")
     ax.set_xlabel("Time")
     ax.grid(alpha=0.16, linewidth=0.6)
-    ax.legend(handles=_line_legend_items(), loc="upper right", ncol=3, framealpha=0.95, title=legend_title, fontsize=8, title_fontsize=8)
+    ax.legend(handles=_background_legend_items(), loc="upper right", ncol=3, framealpha=0.95, title=legend_title, fontsize=8, title_fontsize=8)
 
     span_days = max((joined.index.max() - joined.index.min()).days, 1)
     if span_days > 365 * 2:
